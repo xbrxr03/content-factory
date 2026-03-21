@@ -44,6 +44,7 @@ args = argparse.ArgumentParser()
 args.add_argument("--quick", action="store_true")
 args.add_argument("--full",  action="store_true")
 parsed = args.parse_args()
+IN_CI = os.environ.get("CI", "").lower() == "true"
 
 
 # ── 1. Python imports ──────────────────────────────────────────────────────────
@@ -152,7 +153,7 @@ except Exception as e:
 # ── 6. External tools ──────────────────────────────────────────────────────────
 section("External tools")
 
-for cmd, name in [("ffmpeg", "ffmpeg"), ("piper", "piper"), ("ollama", "ollama")]:
+for cmd, name in [("ffmpeg", "ffmpeg"), ("piper", "piper")] + ([] if IN_CI else [("ollama", "ollama")]):
     r = subprocess.run(["which", cmd], capture_output=True)
     if r.returncode == 0:
         ok(f"{name} ({r.stdout.decode().strip()})")
@@ -168,14 +169,18 @@ else:
     fail("Piper voice model", f"not found at {piper_model}")
 
 comfyui_dir = Path(os.environ.get("COMFYUI_DIR", Path.home() / "ComfyUI"))
-if (comfyui_dir / "main.py").exists():
+if IN_CI:
+    skip("ComfyUI", "CI environment")
+elif (comfyui_dir / "main.py").exists():
     ok(f"ComfyUI ({comfyui_dir})")
 else:
     fail("ComfyUI", f"main.py not found at {comfyui_dir}")
 
 ckpt_name = os.environ.get("COMFYUI_CHECKPOINT", "dreamshaper_8.safetensors")
 ckpt_path = comfyui_dir / "models" / "checkpoints" / ckpt_name
-if ckpt_path.exists():
+if IN_CI:
+    skip(f"Checkpoint {ckpt_name}", "CI environment")
+elif ckpt_path.exists():
     size_gb = ckpt_path.stat().st_size / (1024**3)
     ok(f"Checkpoint {ckpt_name} ({size_gb:.1f}GB)")
 else:
@@ -209,19 +214,22 @@ else:
 # ── 8. Ollama ──────────────────────────────────────────────────────────────────
 section("Ollama")
 
-try:
-    r = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=10)
-    if r.returncode == 0:
-        models = [l.split()[0] for l in r.stdout.strip().splitlines()[1:] if l]
-        ok(f"Ollama running — models: {', '.join(models) or 'none'}")
-        if any("qwen2.5" in m for m in models):
-            ok("qwen2.5:7b available")
+if IN_CI:
+    skip("Ollama", "CI environment — install on real hardware")
+else:
+    try:
+        r = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=10)
+        if r.returncode == 0:
+            models = [l.split()[0] for l in r.stdout.strip().splitlines()[1:] if l]
+            ok(f"Ollama running — models: {', '.join(models) or 'none'}")
+            if any("qwen2.5" in m for m in models):
+                ok("qwen2.5:7b available")
+            else:
+                fail("qwen2.5:7b", "not found. Run: ollama pull qwen2.5:7b")
         else:
-            fail("qwen2.5:7b", f"not found. Run: ollama pull qwen2.5:7b")
-    else:
-        fail("Ollama", "not running — start: ollama serve")
-except Exception as e:
-    fail("Ollama", str(e))
+            fail("Ollama", "not running — start: ollama serve")
+    except Exception as e:
+        fail("Ollama", str(e))
 
 
 # ── 9. Job lifecycle ───────────────────────────────────────────────────────────
