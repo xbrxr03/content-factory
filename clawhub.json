@@ -1,0 +1,32 @@
+{
+  "name": "content-factory",
+  "version": "1.0.0",
+  "description": "Fully automated faceless YouTube documentary pipeline. Send a topic, get a published video. Runs 100% offline on your own hardware.",
+  "author": "xbrxr03",
+  "license": "MIT",
+  "homepage": "https://github.com/xbrxr03/content-factory",
+  "repository": "https://github.com/xbrxr03/content-factory",
+  "tags": ["youtube", "video", "documentary", "automation", "faceless", "offline", "comfyui", "piper", "ollama"],
+  "category": "content",
+  "requires": {
+    "openclaw": ">=2026.1.0",
+    "binaries": ["python3", "ffmpeg", "piper", "ollama", "git"],
+    "python": ["psutil", "pathvalidate", "piper-tts", "requests", "pillow"],
+    "hardware": {
+      "ram_gb_min": 8,
+      "gpu_vram_gb_recommended": 6,
+      "disk_gb_min": 10
+    }
+  },
+  "optional": {
+    "youtube_upload": {
+      "description": "Automatic YouTube upload at scheduled time",
+      "python": ["google-auth-oauthlib", "google-api-python-client"],
+      "setup": "python3 youtube_upload.py --test"
+    }
+  },
+  "install": "bash install.sh",
+  "test": "python3 test_factory.py --quick",
+  "skill_file": "SKILL.md",
+  "compatible_with": ["clawos", "openclaw"]
+}
