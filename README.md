@@ -1,4 +1,15 @@
-# content-factory
+<div align="center">
+
+# 🎬 content-factory
+
+### Fully automated faceless YouTube documentary pipeline
+
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org/)
+[![Ollama](https://img.shields.io/badge/Ollama-Local_AI-000000?logo=ollama&logoColor=white)](https://ollama.ai)
+[![ComfyUI](https://img.shields.io/badge/ComfyUI-DreamShaper-6366F1)](https://github.com/comfyanonymous/ComfyUI)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+</div>
 
 Fully automated faceless YouTube documentary pipeline. Send a topic via WhatsApp or chat, wake up to a published video. Runs 100% offline on your own hardware.
 
