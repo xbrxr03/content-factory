@@ -4,6 +4,7 @@
 
 ### Fully automated faceless YouTube documentary pipeline
 
+[![CI](https://github.com/xbrxr03/content-factory/actions/workflows/ci.yml/badge.svg)](https://github.com/xbrxr03/content-factory/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org/)
 [![Ollama](https://img.shields.io/badge/Ollama-Local_AI-000000?logo=ollama&logoColor=white)](https://ollama.ai)
 [![ComfyUI](https://img.shields.io/badge/ComfyUI-DreamShaper-6366F1)](https://github.com/comfyanonymous/ComfyUI)

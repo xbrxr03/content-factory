@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Ruff check
+        run: ruff check .
+
+  import-check:
+    name: Import check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install psutil pathvalidate requests pillow
+
+      - name: Copy factory to ~/factory
+        run: |
+          cp -r factory ~/factory
+          mkdir -p ~/factory/jobs/{inbox,active,completed,failed}
+          mkdir -p ~/factory/{artifacts,logs,state/{agents,events,leases,metrics},assets/music}
+          cat > ~/factory/.env << EOF
+          FACTORY_ROOT=$HOME/factory
+          PYTHONPATH=$HOME/factory
+          OLLAMA_MODEL=qwen2.5:7b
+          PIPER_MODEL_DIR=$HOME/.local/share/piper
+          PIPER_VOICE=en_US-lessac-medium.onnx
+          COMFYUI_DIR=$HOME/ComfyUI
+          COMFYUI_CHECKPOINT=dreamshaper_8.safetensors
+          EOF
+
+      - name: Import factory core modules
+        env:
+          FACTORY_ROOT: ${{ github.workspace }}/factory
+          PYTHONPATH: ${{ github.workspace }}/factory
+        run: |
+          python -c "
+          from core.config import ROOT, INBOX_DIR, ACTIVE_DIR, ARTIFACTS_DIR, LOGS_DIR
+          from core.job_store import JobStore
+          from core.lease_manager import LeaseManager
+          from core.event_logger import EventLogger
+          from core.agent_base import AgentBase
+          print('All core imports OK')
+          "
+
+      - name: Import factory agent modules
+        env:
+          FACTORY_ROOT: ${{ github.workspace }}/factory
+          PYTHONPATH: ${{ github.workspace }}/factory
+        run: |
+          python -c "
+          from agents.writer_agent import WriterAgent
+          from agents.voice_agent import VoiceAgent
+          from agents.assembler_agent import AssemblerAgent
+          from agents.visual_agent import VisualAgent
+          from agents.render_agent import RenderAgent
+          from agents.upload_agent import UploadAgent
+          from agents.foreman_agent import ForemanAgent
+          from agents.monitor_agent import MonitorAgent
+          print('All agent imports OK')
+          "
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu
+
+      - name: Install Python dependencies
+        run: |
+          pip install psutil pathvalidate requests pillow piper-tts \
+            google-auth-oauthlib google-api-python-client
+
+      - name: Download Piper voice model
+        run: |
+          mkdir -p ~/.local/share/piper
+          BASE="https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium"
+          wget -q "$BASE/en_US-lessac-medium.onnx" -O ~/.local/share/piper/en_US-lessac-medium.onnx
+          wget -q "$BASE/en_US-lessac-medium.onnx.json" -O ~/.local/share/piper/en_US-lessac-medium.onnx.json
+
+      - name: Copy factory to ~/factory
+        run: |
+          cp -r factory ~/factory
+          mkdir -p ~/factory/jobs/{inbox,active,completed,failed}
+          mkdir -p ~/factory/{artifacts,logs,state/{agents,events,leases,metrics},assets/music}
+          cat > ~/factory/.env << EOF
+          FACTORY_ROOT=$HOME/factory
+          PYTHONPATH=$HOME/factory
+          OLLAMA_MODEL=qwen2.5:7b
+          PIPER_MODEL_DIR=$HOME/.local/share/piper
+          PIPER_VOICE=en_US-lessac-medium.onnx
+          COMFYUI_DIR=$HOME/ComfyUI
+          COMFYUI_CHECKPOINT=dreamshaper_8.safetensors
+          EOF
+
+      - name: Run tests (quick mode — no Ollama, no ComfyUI)
+        run: |
+          FACTORY_ROOT=~/factory PYTHONPATH=~/factory python3 test_factory.py --quick
