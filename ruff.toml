@@ -1,0 +1,12 @@
+# Ruff config for content-factory
+# Docs: https://docs.astral.sh/ruff/
+
+line-length = 120
+target-version = "py310"
+
+[lint]
+select = ["E", "F", "W", "I", "UP"]
+ignore = ["E501"]  # line length handled by formatter
+
+[format]
+quote-style = "double"
